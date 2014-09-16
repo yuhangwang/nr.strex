@@ -1,4 +1,6 @@
-# Copyright (c) 2014  Niklas Rosenstein
+# -*- coding: utf-8 -*-
+#
+# Copyright (C) 2014  Niklas Rosenstein
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -17,10 +19,15 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
+"""
+strex string processing
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Strex is a utility package for processing strings and character
+streams with ease. It is aimed specifically for developing
+minilanguages.
+"""
 
 __author__ = 'Niklas Rosenstein <rosensteinniklas (at) gmail.com>'
-__version__ = '0.6.0'
-
-from . import scan
-from . import lex
+__version__ = '1.0'
 
