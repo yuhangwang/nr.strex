@@ -28,6 +28,6 @@ streams with ease. It is aimed specifically for developing
 minilanguages.
 """
 
-__author__ = 'Niklas Rosenstein <rosensteinniklas (at) gmail.com>'
-__version__ = '1.0'
+__author__ = 'Niklas Rosenstein <rosensteinniklas(at)gmail.com>'
+__version__ = '1.0.0'
 
