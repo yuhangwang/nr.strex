@@ -15,9 +15,7 @@ setup(
     author='Niklas Rosenstein',
     author_email='rosensteinniklas@gmail.com',
     url='https://github.com/nr-libs/py-nr.strex',
-    install_requires=[
-        'setuptools',
-        ],
+    install_requires=[],
     py_modules=['nr.strex'],
     packages=find_packages('src'),
     package_dir={'': 'src'},
