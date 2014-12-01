@@ -190,21 +190,53 @@ class Scanner(object):
         character sequence is returned as a string.
 
         :param consumer: The consumer function.
-        :raise RuntimeError: If the Scanner has not touched the
-            input stream before this function was called. You can
-            touch the stream by calling :meth:`next` to read the
-            first character.
+        :raise RuntimeError: If :meth:`next` has not been called
+            after the Scanner was initialized.
         """
 
         char = self.char
         if char is None:
             raise RuntimeError(
-              'Scanner.next() must be called at least once before consuming')
+              'Scanner.next() must be called before consume()')
 
         result = ''
         while char and consumer(char, len(result)):
             result += char
             char = self.next()
+        return result
+
+    def match(self, string, casesensitive=True):
+        """
+        Matches the specified *string* from the current position of the
+        Scanner. Optionally, you can specify to do case-insensitive
+        matching by passing False to the *casesensitive* argument.
+
+        :param string: The string to match.
+        :param casesensitive: True if the letter case should be
+            considered while matching the string, False if not. Default
+            is True.
+        :raise RuntimeError: If :meth:`next` has not been called
+            after the Scanner was initialized.
+        :return: The matched string or None if the string didn't match.
+        """
+
+        char = self.char
+        if char is None:
+            raise RuntimeError(
+              'Scanner.next() must be called before next()')
+
+        charmod = lambda c: c
+        if not casesensitive:
+            string = string.lower()
+            charmod = lambda c: c.lower()
+
+        result = ''
+        for refc in string:
+            if not char or refc != charmod(char):
+                return None
+            result += char
+            char = self.next()
+
         return result
 
     def getline(self):
@@ -235,4 +267,3 @@ class Scanner(object):
             char = self.next()
 
         return result
-
