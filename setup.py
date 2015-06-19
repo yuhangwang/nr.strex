@@ -17,8 +17,8 @@ setup(
     url='https://github.com/NiklasRosenstein/nr.strex',
     install_requires=[],
     py_modules=['nr.strex'],
-    packages=find_packages('src'),
-    package_dir={'': 'src'},
+    packages=find_packages('.'),
+    package_dir={'': '.'},
     namespace_packages=['nr'],
     classifiers=[
         "Development Status :: 5 - Production/Stable",
