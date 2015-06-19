@@ -5,16 +5,16 @@ def read(filename):
     with open(filename) as fp:
         return fp.read()
 
-long_description = read('README.md')
+long_description = read('readme.md')
 
 setup(
     name='nr.strex',
-    version='1.1.0',
+    version='1.2',
     description='string processing',
     long_description=long_description,
     author='Niklas Rosenstein',
     author_email='rosensteinniklas@gmail.com',
-    url='https://github.com/nr-libs/py-nr.strex',
+    url='https://github.com/NiklasRosenstein/nr.strex',
     install_requires=[],
     py_modules=['nr.strex'],
     packages=find_packages('src'),
