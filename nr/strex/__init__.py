@@ -29,7 +29,7 @@ minilanguages.
 """
 
 __author__ = 'Niklas Rosenstein <rosensteinniklas(at)gmail.com>'
-__version__ = '1.2'
+__version__ = '1.3'
 
 
 from nr.strex.scanner import Scanner

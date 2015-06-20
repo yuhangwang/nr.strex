@@ -9,7 +9,7 @@ long_description = read('readme.md')
 
 setup(
     name='nr.strex',
-    version='1.2',
+    version='1.3',
     description='string processing',
     long_description=long_description,
     author='Niklas Rosenstein',

@@ -91,3 +91,23 @@ class Scanner(object):
             self.colno += len(text)
 
         return match
+
+    def consume_set(self, charset, invert=False, maxc=-1):
+        """
+        Consumes all characters that occur in the *charset* up to a
+        total number of *maxc* characters.
+        """
+
+        result = type(self._content)()
+        char = self.char
+        while char:
+            if maxc >= 0 and len(result) >= maxc:
+                break
+            if not invert and char in charset:
+                result += char
+            elif invert and char not in charset:
+                result += char
+            else:
+                break
+            char = self.next()
+        return result
