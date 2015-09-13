@@ -85,7 +85,7 @@ class Token(object):
             return '<Token {!s}:{!r} at line{} col:{}{}>'.format(*fmt)
 
     def handled(self):
-        return self.type is None
+        return self.type is not None
 
     def valid(self):
         return not self.handled()

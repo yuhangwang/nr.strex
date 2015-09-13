@@ -61,7 +61,7 @@ class Charset(Rule):
         self._at_column = at_column
 
     def match(self, scanner):
-        if self._at_column >= 0 and self._at_column != scanner.colno():
+        if self._at_column >= 0 and self._at_column != scanner.colno:
             return None
         char = scanner.char
         result = type(char)()
