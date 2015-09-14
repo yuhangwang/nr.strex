@@ -91,7 +91,7 @@ class Scanner(object):
     self.colno = 0
 
   def __repr__(self):
-    return '<Scanner at {}:{}>'.format(self.lineno, self.colno)
+    return '<Scanner at {0}:{0}>'.format(self.lineno, self.colno)
 
   def __bool__(self):
     return self.index < len(self.text)
@@ -190,6 +190,10 @@ class Lexer(object):
 
   @attr scanner
   @attr rules
+  @attr rules_map A dictionary mapping the rule name to the rule
+    object. This is automatically built when the Lexer is created.
+    If the `rules` are updated in the lexer directly, `update_map`
+    must be called.
   @attr raise_invalid
   @attr skip_rules A set of rule type IDs that will automatically
     be skipped by the `next()` method.
@@ -203,6 +207,7 @@ class Lexer(object):
     super(Lexer, self).__init__()
     self.scanner = scanner
     self.rules = list(rules) if rules else []
+    self.update_map()
     self.raise_invalid = raise_invalid
     self.token = None
 
@@ -224,15 +229,89 @@ class Lexer(object):
 
   __nonzero__ = __bool__  # Python 2
 
-  def next(self):
+  def update_map(self):
+    ''' Updates the `rules_map` dictionary based on the `rules` list.
+
+    Raises:
+      ValueError: if a rule name is duplicate
+      TypeError: if an item in the `rules` list is not a rule. '''
+
+    self.rules_map = {}
+    for rule in self.rules:
+      if not isinstance(rule, Rule):
+        raise TypeError('item must be Rule instance', type(rule))
+      if rule.name in self.rules_map:
+        raise ValueError('duplicate rule name', rule.name)
+      self.rules_map[rule.name] = rule
+
+  def accept(self, *names):
+    ''' Extracts a token of one of the specified rule names and doesn't
+    error if unsuccessful. The lexer will not move on if no token could be
+    extract with this function.
+
+    Raises:
+      ValueError: if a rule with the specified name doesn't exist. '''
+
+    if not self.scanner or (self.token and self.token.type == eof):
+      if not self.token or self.token.type != eof:
+        self.token = Token(eof, self.scanner.cursor, None)
+      if eof in names:
+        return self.token
+      return None
+
+    cursor = self.scanner.cursor
+    for rule_name in names:
+      if rule_name == eof:
+        continue
+      rule = self.rules_map.get(rule_name)
+      if rule is None:
+        import pdb; pdb.set_trace()
+        raise ValueError('unknown rule', rule_name)
+      value = rule.tokenize(self.scanner)
+      if value:
+        if type(value) is Token:
+          return value
+        else:
+          return Token(rule.name, cursor, value)
+      self.scanner.restore(cursor)
+
+    return None
+
+  def next(self, *expectation):
     ''' Parse the next token from the input and return it. If
     `raise_invalid` is True, this method can raise `TokenizationError`.
     The new token can also be accessed from the `token` attribute
-    after the method was called. '''
+    after the method was called.
+
+    If one or more arguments are specified, they must be rule names
+    that are to be expected at the current position. They will be
+    attempted to be matched first (in the specicied order). If the
+    expectation could not be met, a `UnexpectedTokenError` is raised.
+
+    An expected Token will not be skipped, even if its rule says so.
+
+    Raises:
+      ValueError: if an expectation doesn't match with a rule name.
+      UnexpectedTokenError: if an expectation is given and the
+        expectation wasn't fulfilled.
+      TokenizationError: if a token could not be generated from
+        the current position of the Scanner and `raise_invalid`
+        is True.
+    '''
+
+    token = self.accept(*expectation)
+    if token:
+      self.token = token
+      return token
 
     if self.token and self.token.type == eof:
+      if expectation:
+        raise UnexpectedTokenError(expectation, self.token)
       return self.token
 
+    # Match the next appropriate token. In case the caller expected
+    # a specific token type, we can raise an error with the token
+    # that we actually extracted for additional information.
     token = None
     while token is None:
       cursor = self.scanner.cursor
@@ -241,21 +320,28 @@ class Lexer(object):
         break
 
       for rule in self.rules:
+        if expectation and rule.name in expectation:
+          # Skip rules that we already tried in the first place.
+          continue
         value = rule.tokenize(self.scanner)
         if value:
-          if type(value) is not Token:
+          if type(value) is Token:
+            token = value
+          else:
             token = Token(rule.name, cursor, value)
           break
-        self.scanner.restore(cursor)
 
+      # Y U GIVE ME NO TOKEN?
       if token is None:
         token = Token(None, cursor, self.scanner.char)
-        if self.raise_invalid:
-          raise TokenizationError(token)
-      elif rule.skip:
+      elif not expectation and rule.skip:
         token = None
 
     self.token = token
+    if token.type is None:
+      raise TokenizationError(token)
+    if expectation:
+      raise UnexpectedTokenError(expectation, token)
     return token
 
 
@@ -299,6 +385,8 @@ class Regex(Rule):
 
 
 class Keyword(Rule):
+  ''' This rule matches an exact string (optionally case insensitive)
+  from the scanners current position. '''
 
   def __init__(self, name, string, case_sensitive=True, skip=False):
     super(Keyword, self).__init__(name, skip)
@@ -320,6 +408,10 @@ class Keyword(Rule):
 
 
 class Charset(Rule):
+  ''' This rule consumes all characters of a given set. It can be
+  specified to only match at a specific column number of the scanner.
+  This is useful to create a separate indentation token type apart
+  from the typical whitespace token. '''
 
   def __init__(self, name, charset, at_column=-1, skip=False):
     super(Charset, self).__init__(name, skip)
@@ -338,9 +430,46 @@ class Charset(Rule):
 
 
 class TokenizationError(Exception):
+  ''' This exception is raised if the stream can not be tokenized
+  at a given position. The `Token` object that an object is initialized
+  with is an invalid token with the cursor position and current scanner
+  character as its value. '''
 
   def __init__(self, token):
+    if type(token) is not Token:
+      raise TypeError('expected Token object', type(token))
+    if token.type is not None:
+      raise ValueError('can not be raised with a valid token')
     self.token = token
 
   def __str__(self):
-    return str(self.token)
+    message = 'could not tokenize stream at {0}:{1}:{2!r}'.format(
+      self.token.cursor.lineno, self.token.cursor.colno, self.token.value)
+    return message
+
+
+class UnexpectedTokenError(Exception):
+  ''' This exception is raised when the `Lexer.next()` method was given
+  one or more expected token types but the extracted token didn't match
+  the expected types. '''
+
+  def __init__(self, expectation, token):
+    if not isinstance(expectation, (list, tuple)):
+      message = 'expectation must be a list/tuple of rule names'
+      raise TypeError(message, type(expectation))
+    if len(expectation) < 1:
+      raise ValueError('expectation must contain at least one item')
+    if type(token) is not Token:
+      raise TypeError('token must be Token object', type(token))
+    if token.type is None:
+      raise ValueError('can not be raised with an invalid token')
+    self.expectation = expectation
+    self.token = token
+
+  def __str__(self):
+    message = 'expected token '
+    if len(self.expectation) == 1:
+      message += '"' + self.expectation[0] + '"'
+    else:
+      message += '{' + ','.join(map(str, self.expectation)) + '}'
+    return message + ', got "{0}" instead'.format(self.token.type)
