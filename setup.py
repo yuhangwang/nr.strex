@@ -9,12 +9,12 @@ long_description = read('readme.md')
 
 setup(
     name='nr.strex',
-    version='1.3',
-    description='string processing',
+    version='1.4.0',
+    description='simple tokenization and parsing library',
     long_description=long_description,
     author='Niklas Rosenstein',
     author_email='rosensteinniklas@gmail.com',
-    url='https://github.com/NiklasRosenstein/nr.strex',
+    url='https://github.com/nr-python/nr.strex',
     install_requires=[],
     py_modules=['nr.strex'],
     packages=find_packages('.'),
